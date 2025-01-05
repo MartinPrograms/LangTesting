@@ -14,14 +14,6 @@ public class IRGenerator
     {
         ParserOutput = parserParserOutput;
         InputFileName = inputFileName;
-        
-        // Check if LLVM is installed
-        if (Process.Start("llvm-config", "--version") == null)
-        {
-            IROutput.Errors.Add(new IRError("LLVM is not installed", 0, 0, InputFileName));
-            _canGenerate = false;
-            return;
-        }
     }
 
     public void Generate()

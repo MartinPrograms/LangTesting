@@ -5,14 +5,17 @@ namespace IRGenerator.Builder;
 public class IRBuilder
 {
     public string ModuleName { get; set; }
+    public IRPlatform Platform { get; set; }
     
     public List<IRVariable> Globals { get; set; } = new();
     public List<IRFunction> Functions { get; set; } = new();
     
-    public IRBuilder(string moduleName)
+    public IRBuilder(string moduleName, IRPlatform platform)
     {
         ModuleName = moduleName;
+        Platform = platform;
     }
+    
     #region AddGlobal
 
     void CheckGlobalName(string name)
@@ -98,48 +101,76 @@ public class IRBuilder
         var builder = new StringBuilder();
         
         // It is NOT an LLVM IR builder, it's a very simple ir builder, which can only be compiled by a custom compiler
+        builder.AppendLine("platform " + Platform);
+        builder.AppendLine("");
         builder.AppendLine($"beginmodule {ModuleName}");
         
         foreach (var global in Globals)
         {
-            builder.AppendLine($"global {global.Type} {global.Name} = {global.Value}");
+            builder.AppendLine($"\tglobal {global.Type} {global.Name} = {global.Value}");
         }
         
         foreach (var function in Functions)
         {
-            builder.AppendLine($"function {function.ReturnType} {function.Name}({string.Join(", ", function.Parameters)})");
+            builder.AppendLine($"\tfunction {function.ReturnType} {function.Name}({string.Join(", ", function.Parameters)})");
         }
         
         builder.AppendLine("endmodule");
+        builder.AppendLine("");
         
         builder.AppendLine("beginfunctions");
         
         foreach (var function in Functions)
         {
-            builder.AppendLine($"beginfunction {function.Name}");
+            builder.AppendLine($"\tbeginfunction {function.Name}");
 
-            builder.AppendLine("beginlocals");
+            builder.AppendLine("\tbeginlocals");
             foreach (var local in function.Locals)
             {
-                builder.AppendLine($"local {local.Type} {local.Name} = {local.Value}");
+                builder.AppendLine($"\t\tlocal {local.Type} {local.Name}");
             }
             
-            builder.AppendLine("endlocals");
+            builder.AppendLine("\tendlocals");
             
-            builder.AppendLine("begininstructions");
+            builder.AppendLine("\tbegininstructions");
             
             foreach (var block in function.Instructions)
             {
-                builder.AppendLine(block.ToString());
+                if (block.OpCode == IROpCode.Label)
+                {
+                    builder.AppendLine(""+block.ToString()); // making labels stand out
+                }else
+                    builder.AppendLine("\t\t"+block.ToString());
             }
             
-            builder.AppendLine("endinstructions");
+            builder.AppendLine("\tendinstructions");
             
-            builder.AppendLine("endfunction");
+            builder.AppendLine("\tendfunction");
+            
+            if (function != Functions.Last())
+            {
+                builder.AppendLine("");
+            }
         }
         
         builder.AppendLine("endfunctions");
         
         return builder.ToString();
+    }
+
+    public bool HasGlobal(string variableValue)
+    {
+        return Globals.Any(g => g.Name == variableValue);
+    }
+
+    public bool HasFunction(string variableValue)
+    {
+        return Functions.Any(f => f.Name == variableValue);
+    }
+
+    private int _variableCounter = 0;
+    public string GetNextVariableName()
+    {
+        return $"_v{_variableCounter++}";
     }
 }

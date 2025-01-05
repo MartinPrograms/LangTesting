@@ -1,7 +1,13 @@
-﻿fn void main(){
-    int a = 2;
-    int b = 1;
-    int c = 3;
-    int d = 156899;
+﻿int global = 1000;
+
+fn int test(){
+    int a = 0;
+    int b = 100;
     int c = a + b;
+    return c;
+}
+
+fn int main(){
+    int a = test();
+    return a;
 }

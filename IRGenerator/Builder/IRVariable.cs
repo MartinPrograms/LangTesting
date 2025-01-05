@@ -14,6 +14,11 @@ public class IRVariable
         Value = value;
         Constant = const2;
     }
+
+    public IRInstruction DefaultStoreInstruction()
+    {
+        return new IRInstruction(IROpCode.Store, [Value, Name]); // Value is before name because its left to right, we store (value) into (name)
+    }
     
     public override string ToString()
     {

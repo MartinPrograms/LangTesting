@@ -19,6 +19,7 @@ public class IRInstruction
 
 public enum IROpCode
 {
+    Label, // For marking a label
     Add,
     Sub,
     Mul,
@@ -55,13 +56,4 @@ public enum IROpCode
     Trunc, // Truncate
     Zext, // Zero extend
     Sext, // Sign extend
-    Fptosi, // Float to signed int
-    Fptoui, // Float to unsigned int
-    Sitofp, // Signed int to float
-    Uitofp, // Unsigned int to float
-    
-    Fadd,
-    Fsub,
-    Fmul,
-    Fdiv,
 }
