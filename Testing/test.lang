@@ -9,5 +9,7 @@ fn int test(){
 
 fn int main(){
     int a = test();
+    a = a * a;
+    a = a / a;
     return a;
 }

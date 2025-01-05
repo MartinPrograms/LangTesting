@@ -108,6 +108,18 @@ public class Generator
                     
                     Logger.Info("IRGenerator", $"Function call: {function.Name}");
                 }
+
+                if (currentFunction != null && currentFunction.Locals.Any(x => x.Name == firstChild.Value) && childList.Count > 2 && childList[1].Value == "=")
+                {
+                    // We are assigning a value to a variable
+                    var variable = currentFunction.Locals.First(x => x.Name == firstChild.Value);
+                    var rhs = childList.Skip(2).ToList();
+                    var expression = new IRBuilderExpression(rhs, builder);
+                    List<IRInstruction> instructions = expression.Generate(variable.Type);
+                    var instruction = new IRInstruction(IROpCode.Store, [expression.Name, variable.Name]);
+                    currentFunction.Instructions.AddRange(instructions);
+                    currentFunction.Instructions.Add(instruction);
+                }
             }
         }
     }
