@@ -10,6 +10,7 @@ fn int test(){
 fn int main(){
     int a = test();
     a = a * a;
-    a = a / a;
+    a = 0 - a;
+    a = a + global;
     return a;
 }
