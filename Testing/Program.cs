@@ -1,4 +1,5 @@
-﻿using Lexer;
+﻿using System.Diagnostics;
+using Lexer;
 using Settings;
 using StupidSimpleLogger;
 
@@ -96,10 +97,113 @@ else
 Logger.DumpLogs();
 
 // And move on to the compiler
-Logger.Info("Compiler","Starting compilation...");
-/*
-var compiler = new Compiler.Compiler(irGenerator.IRGeneratorOutput);
+Logger.Info("IRCompiler","Starting compilation...");
+
+var compiler = new IRCompiler.IRCompiler(irGenerator.IROutput, inputFileName + ".s"); // Assemble the output to a file
 compiler.Compile();
 
-Logger.Info("Compiler","Compilation finished");
-*/
+Logger.Info("IRCompiler","Compilation finished");
+
+if (compiler.IrOutput.Errors.Count == 0)
+{
+    Logger.Info("IRCompiler","No errors found");
+}
+else
+{
+    Logger.Error("IRCompiler","Errors found");
+    foreach (var error in compiler.IrOutput.Errors)
+    {
+        Logger.Error("IRCompiler",error.ToString());
+    }
+    
+    Logger.DumpLogs();
+    throw new Exception("Errors found");
+}
+
+// Now that we have compiled the file, we can dump the logs
+Logger.DumpLogs();
+
+
+if (OperatingSystem.IsWindows())
+{
+    // Run nasm -f win64 -o program.obj .\test.lang.s
+    var process = new Process
+    {
+        StartInfo = new ProcessStartInfo
+        {
+            FileName = "nasm",
+            Arguments = $"-f win64 -o {inputFileName}.obj {inputFileName}.s",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        }
+    };
+    
+    process.Start();
+    
+    var outputstr = process.StandardOutput.ReadToEnd();
+    var errorstr = process.StandardError.ReadToEnd();
+        
+    Logger.Info("NASM",outputstr);
+    Logger.Error("NASM",errorstr);
+    
+    process.WaitForExit();
+    
+    // run link program.obj /subsystem:console /entry:_start /LARGEADDRESSAWARE:NO if main function exists
+    string argzzz = $"/LARGEADDRESSAWARE:NO";
+    if (irGenerator.IROutput.Builder.HasMainFunction)
+    {
+        argzzz = $"/subsystem:console /entry:_start /LARGEADDRESSAWARE:NO";
+    }
+    
+    process = new Process
+    {
+        StartInfo = new ProcessStartInfo
+        {
+            FileName = "link",
+            Arguments = $"{inputFileName}.obj {argzzz}",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        }
+    };
+    
+    process.Start();
+    
+    outputstr = process.StandardOutput.ReadToEnd();
+    errorstr = process.StandardError.ReadToEnd();
+    
+    Logger.Info("LINK",outputstr);
+    Logger.Error("LINK",errorstr);
+    
+    process.WaitForExit();
+    
+    // run program.exe
+    process = new Process
+    {
+        StartInfo = new ProcessStartInfo
+        {
+            FileName = $"{inputFileName}.exe",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        }
+    };
+    
+    process.Start();
+    
+    outputstr = process.StandardOutput.ReadToEnd();
+    errorstr = process.StandardError.ReadToEnd();
+    
+    Logger.Info("PROGRAM",outputstr);
+    Logger.Error("PROGRAM",errorstr);
+    
+    process.WaitForExit();
+    
+    Logger.Info("IRCompiler","Program finished with exit code " + process.ExitCode);
+    
+    Logger.DumpLogs();  
+}

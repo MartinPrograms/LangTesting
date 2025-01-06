@@ -6,7 +6,7 @@ public class IRBuilder
 {
     public string ModuleName { get; set; }
     public IRPlatform Platform { get; set; }
-    
+    public bool HasMainFunction => Functions.Any(f => f.Name == "main");
     public List<IRVariable> Globals { get; set; } = new();
     public List<IRFunction> Functions { get; set; } = new();
     
@@ -101,9 +101,9 @@ public class IRBuilder
         var builder = new StringBuilder();
         
         // It is NOT an LLVM IR builder, it's a very simple ir builder, which can only be compiled by a custom compiler
-        builder.AppendLine("platform " + Platform);
+        builder.AppendLine("%platform " + Platform);
         builder.AppendLine("");
-        builder.AppendLine($"beginmodule {ModuleName}");
+        builder.AppendLine($"%beginmodule {ModuleName}");
         
         foreach (var global in Globals)
         {
@@ -115,37 +115,37 @@ public class IRBuilder
             builder.AppendLine($"\tfunction {function.ReturnType} {function.Name}({string.Join(", ", function.Parameters)})");
         }
         
-        builder.AppendLine("endmodule");
+        builder.AppendLine("%endmodule");
         builder.AppendLine("");
         
-        builder.AppendLine("beginfunctions");
+        builder.AppendLine("%beginfunctions");
         
         foreach (var function in Functions)
         {
-            builder.AppendLine($"\tbeginfunction {function.Name}");
+            builder.AppendLine($"\t%beginfunction {function.Name}");
 
-            builder.AppendLine("\tbeginlocals");
+            builder.AppendLine("\t%beginlocals");
             foreach (var local in function.Locals)
             {
                 builder.AppendLine($"\t\tlocal {local.Type} {local.Name}");
             }
             
-            builder.AppendLine("\tendlocals");
+            builder.AppendLine("\t%endlocals");
             
-            builder.AppendLine("\tbegininstructions");
+            builder.AppendLine("\t%begininstructions");
             
             foreach (var block in function.Instructions)
             {
                 if (block.OpCode == IROpCode.Label)
                 {
-                    builder.AppendLine(""+block.ToString()); // making labels stand out
+                    builder.AppendLine(""+block.ToString() + ":"); // making labels stand out
                 }else
                     builder.AppendLine("\t\t"+block.ToString());
             }
             
-            builder.AppendLine("\tendinstructions");
+            builder.AppendLine("\t%endinstructions");
             
-            builder.AppendLine("\tendfunction");
+            builder.AppendLine("\t%endfunction");
             
             if (function != Functions.Last())
             {
@@ -153,7 +153,7 @@ public class IRBuilder
             }
         }
         
-        builder.AppendLine("endfunctions");
+        builder.AppendLine("%endfunctions");
         
         return builder.ToString();
     }

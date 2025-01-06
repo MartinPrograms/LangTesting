@@ -1,8 +1,11 @@
-﻿namespace IRGenerator;
+﻿using IRGenerator.Builder;
+
+namespace IRGenerator;
 
 public class IROutput
 {
     public List<IRError> Errors { get; set; } = new();
+    public IRBuilder Builder { get; set; } 
 }
 
 public class IRError

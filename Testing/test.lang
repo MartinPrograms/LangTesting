@@ -1,16 +1,5 @@
-﻿int global = 1000;
-
-fn int test(){
-    int a = 0;
-    int b = 100;
-    int c = a + b;
-    return c;
-}
+﻿int test = 1;
 
 fn int main(){
-    int a = test();
-    a = a * a;
-    a = 0 - a;
-    a = a + global;
-    return a;
+    return test;
 }

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Parser;
+using StupidSimpleLogger;
 
 namespace IRGenerator;
 
@@ -23,7 +24,10 @@ public class IRGenerator
             // Generate IR, using LLVM
             var generator = new Generator(ParserOutput);
             
-            generator.Generate();
+            IROutput.Builder = generator.Generate();
+            
+            Logger.Info("IRGenerator", "IR generated successfully");
+            Logger.Info("IRGenerator", IROutput.Builder.Build());
             
             IROutput.Errors.AddRange(generator.Errors);
         }

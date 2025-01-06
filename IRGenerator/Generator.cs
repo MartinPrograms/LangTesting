@@ -14,7 +14,7 @@ public class Generator
         _parser = parser;
     }
     
-    public unsafe void Generate()
+    public IRBuilder Generate()
     {
         IRPlatform targetPlatform = IRPlatform.Win64;
         if (OperatingSystem.IsMacOS())
@@ -32,15 +32,17 @@ public class Generator
         
         GenerateNode(_parser.Root, builder);
 
-        var ir = builder.Build();
-        Logger.Info("IRGenerator", ir);
+        return builder;
     }
     
     private void GenerateNode(AstNode parserRoot, IRBuilder builder, IRFunction? currentFunction = null)
     {
         Logger.Info("IRGenerator", $"Generating node: {parserRoot.Type}");
-        
+
         // A child in the child list is a List<AstNode>. So parserRoot.Children is a List<List<AstNode>>, this is done to group nodes together, seperated by either ; or {} or ()
+
+        FunctionPass(parserRoot, builder);
+        
         foreach (var childList in parserRoot.Children)
         {
             if (childList.Count == 0)
@@ -56,22 +58,11 @@ public class Generator
             }
             else
             {
-                if (firstChild.Value == "fn") // fn void main() {}
+                if (firstChild.Value == "fn")
                 {
-                    var functionType = childList[1].Value; // The first child is the function type
-                    var functionName = childList[2].Value; // The second child is the function name
-                    var functionArgs = childList[3]; // The third child is the function arguments, this is an expression with the arguments, does not actually work yet... // TODO: Implement function arguments
-                    
-                    Logger.Info("IRGenerator", $"Function: {functionType} {functionName}");
-                    
-                    builder.AddFunction(functionName, IRTypeHelper.GetIRType(functionType), new List<IRVariable>());
-                    
-                    var function = builder.GetFunction(functionName);
-                    currentFunction = function;
-                    
-                    function.Instructions.Add(new IRInstruction(IROpCode.Label, [functionName + "_entry"]));
+                    currentFunction = builder.GetFunction(childList[2].Value);
                 }
-
+                
                 if (IRTypeHelper.GetIRType(firstChild.Value) != IRType.Unknown)
                 {
                     LiteralCreation(parserRoot, builder, currentFunction, firstChild, childList);
@@ -119,6 +110,44 @@ public class Generator
                     var instruction = new IRInstruction(IROpCode.Store, [expression.Name, variable.Name]);
                     currentFunction.Instructions.AddRange(instructions);
                     currentFunction.Instructions.Add(instruction);
+                }
+            }
+        }
+    }
+
+    private void FunctionPass(AstNode parserRoot, IRBuilder builder)
+    {
+        foreach (var childList in parserRoot.Children)
+        {
+            if (childList.Count == 0)
+            {
+                continue;
+            }
+
+            var firstChild = childList.First(); // The keyword, variable name, literal, etc.
+
+            if (firstChild.Children.Count > 0)
+            {
+                // No functions in functions, only global functions >:(
+            }
+            else
+            {
+                if (firstChild.Value == "fn") // fn void main() {}
+                {
+                    var functionType = childList[1].Value; // The first child is the function type
+                    var functionName = childList[2].Value; // The second child is the function name
+                    var
+                        functionArgs =
+                            childList
+                                [3]; // The third child is the function arguments, this is an expression with the arguments, does not actually work yet... // TODO: Implement function arguments
+
+                    Logger.Info("IRGenerator", $"Function: {functionType} {functionName}");
+
+                    builder.AddFunction(functionName, IRTypeHelper.GetIRType(functionType), new List<IRVariable>());
+
+                    var function = builder.GetFunction(functionName);
+
+                    function.Instructions.Add(new IRInstruction(IROpCode.Label, [functionName]));
                 }
             }
         }

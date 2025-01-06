@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\IRCompiler\IRCompiler.csproj" />
       <ProjectReference Include="..\IRGenerator\IRGenerator.csproj" />
       <ProjectReference Include="..\Lexer\Lexer.csproj" />
       <ProjectReference Include="..\Parser\Parser.csproj" />
